@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TipsData</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .bg-gradient-tipsdata {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); /* Light green to soft green */
+        }
+        .text-gradient-tipsdata {
+            background: linear-gradient(45deg, #06b6d4, #0891b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .star-filled { color: #facc15; } /* Yellow-500 */
+        .star-empty { color: #d1d5db; } /* Gray-300 */
+
+        /* Estilo de botones de filtro para Predicciones (internos) */
+        .filter-button {
+            @apply px-5 py-2 rounded-full font-semibold transition-all duration-200 ease-in-out;
+            @apply bg-neutral-200 text-neutral-700 hover:bg-sky-100 hover:text-sky-700;
+        }
+        .filter-button.active {
+            @apply bg-sky-600 text-white shadow-md hover:bg-sky-700;
+        }
+
+        /* NOUVEAU: Estilo para los botones de navegación de la SEGUNDA BARRA */
+        .secondary-nav-item {
+            @apply px-6 py-3 rounded-lg font-bold text-neutral-700 bg-white shadow-sm transition-all duration-200 ease-in-out;
+            @apply hover:bg-sky-50 hover:text-sky-700;
+            white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+            overflow: hidden;    /* Oculta cualquier texto que se desborde */
+            text-overflow: ellipsis; /* Añade puntos suspensivos si el texto es demasiado largo */
+            flex-grow: 1; /* Permite que los botones crezcan para llenar el espacio */
+            text-align: center; /* Centra el texto dentro del botón */
+        }
+        .secondary-nav-item.active {
+            @apply bg-sky-600 text-white shadow-md;
+            /* Eliminamos el borde inferior, ya que ahora son rectángulos con fondo */
+        }
+        
+        /* Mobile specific style for nav links (remains similar for mobile menu) */
+        .nav-link-btn-mobile {
+            @apply block px-4 py-3 text-neutral-700 font-semibold;
+            @apply hover:bg-sky-50 transition-colors duration-200;
+            border-left: 4px solid transparent;
+        }
+        .nav-link-btn-mobile.active {
+            @apply text-sky-700 bg-sky-100;
+            border-left-color: #0ea5e9; /* sky-500 */
+        }
+
+        /* Estilo para las tarjetas de pick */
+        .pick-card {
+            @apply bg-white rounded-lg shadow-lg overflow-hidden border-t-4 border-sky-600;
+            @apply flex flex-col justify-between;
+        }
+
+        /* Animación de carga para el logo */
+        @keyframes bounce-logo {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-bounce-logo {
+            animation: bounce-logo 1.5s infinite ease-in-out;
+        }
+
+        /* Ocultar secciones de contenido por defecto */
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-orange-50 text-neutral-700">
+
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <nav class="container mx-auto flex justify-between items-center py-4 px-4 sm:px-6 lg:px-8">
+            <a href="#hero" class="flex items-center space-x-2 main-nav-link flex-shrink-0">
+                <div class="text-3xl font-extrabold text-sky-600 animate-bounce-logo">TD</div>
+                <span class="text-2xl font-bold text-neutral-800">TipsData</span>
+            </a>
+            
+            <a href="#" class="bg-sky-600 text-white px-5 py-2 rounded-full font-bold hover:bg-sky-700 transition-colors shadow-md hidden md:block flex-shrink-0">ÚNETE AL CANAL</a>
+
+            <button id="mobile-menu-button" class="md:hidden text-neutral-700 hover:text-sky-700 focus:outline-none">
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </nav>
+
+        <nav class="hidden md:block bg-neutral-100 py-3 shadow-inner">
+            <div class="container mx-auto flex justify-center gap-4 px-4 sm:px-6 lg:px-8">
+                <button class="secondary-nav-item active" data-target="premium-section">Pick Premium</button>
+                <button class="secondary-nav-item" data-target="big-data-section">Big Data</button>
+                <button class="secondary-nav-item" data-target="ia-analysis-section">Análisis IA</button>
+                <button class="secondary-nav-item" data-target="predicciones-section">Predicciones</button>
+                <button class="secondary-nav-item" data-target="como-funciona-section">Cómo Funciona</button>
+                <button class="secondary-nav-item" data-target="confianza-section">¿Quién somos?</button> 
+            </div>
+        </nav>
+
+        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-inner pt-2">
+            <button class="nav-link-btn-mobile active" data-target="premium-section">Pick Premium</button>
+            <button class="nav-link-btn-mobile" data-target="big-data-section">Big Data</button>
+            <button class="nav-link-btn-mobile" data-target="ia-analysis-section">Análisis IA</button>
+            <button class="nav-link-btn-mobile" data-target="predicciones-section">Predicciones</button>
+            <button class="nav-link-btn-mobile" data-target="como-funciona-section">Cómo Funciona</button>
+            <button class="nav-link-btn-mobile" data-target="confianza-section">¿Quién somos?</button>
+            <a href="#" class="block px-4 py-3 bg-sky-600 text-white text-center font-bold hover:bg-sky-700 mt-2">ÚNETE AL CANAL</a>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero" class="bg-gradient-tipsdata py-20 text-center px-4 sm:px-6 lg:px-8 shadow-inner">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex justify-center items-center mb-6">
+                    <div class="text-7xl font-extrabold text-sky-600 animate-bounce-logo">T</div>
+                    <div class="text-7xl font-extrabold text-sky-600 animate-bounce-logo delay-75">i</div>
+                    <div class="text-7xl font-extrabold text-sky-600 animate-bounce-logo delay-150">p</div>
+                    <div class="text-7xl font-extrabold text-sky-600 animate-bounce-logo delay-200">s</div>
+                    <div class="text-7xl font-extrabold text-sky-600 animate-bounce-logo delay-250">D</div>
+                    <div class="text-7xl font-extrabold text-sky-600 animate-bounce-logo delay-300">a</div>
+                    <div class="text-7xl font-extrabold text-sky-600 animate-bounce-logo delay-350">t</div>
+                    <div class="text-7xl font-extrabold text-sky-600 animate-bounce-logo delay-400">a</div>
+                </div>
+                <h2 class="text-5xl md:text-6xl font-extrabold leading-tight text-gradient-tipsdata mb-6">
+                    Los Mejores Pronósticos de Fútbol Hoy
+                </h2>
+                <p class="text-xl md:text-2xl text-neutral-600 mb-8 max-w-2xl mx-auto">
+                    Predicciones deportivas basadas en IA, big data y expertos.
+                </p>
+                <button class="bg-sky-600 text-white text-xl px-8 py-4 rounded-full font-bold hover:bg-sky-700 transition-colors duration-300 shadow-xl main-action-btn" data-target="predicciones-section">
+                    ¡VER PREDICCIONES DEL DÍA!
+                </button>
+            </div>
+        </section>
+
+        <div id="content-container">
+            <section id="premium-section" class="content-section py-16 px-4 sm:px-6 lg:px-8 active">
+                <div class="container mx-auto max-w-2xl bg-white rounded-lg shadow-xl p-8 text-center border-t-4 border-emerald-500">
+                    <div class="flex items-center justify-center text-emerald-700 mb-4">
+                        <span class="text-4xl mr-3">💎</span>
+                        <h3 class="text-3xl font-extrabold">Pick Premium del Día</h3>
+                    </div>
+                    <p class="text-xl text-neutral-700 mb-6">
+                        El pronóstico de mayor valor y confianza de hoy te espera.
+                    </p>
+                    <p class="text-2xl font-bold text-sky-800 mb-8">
+                        ¡Accede GRATIS a nuestro canal de Telegram para descubrirlo!
+                    </p>
+                    <a href="#" class="bg-sky-600 text-white text-xl px-8 py-4 rounded-full font-bold hover:bg-sky-700 transition-colors duration-300 shadow-xl inline-flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-8 h-8 mr-3">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.33 7.82l-5.63 4.22c-.22.17-.48.25-.75.25-.26 0-.53-.08-.75-.25L6.67 11c-.38-.28-.5-.77-.32-1.2.18-.43.59-.72 1.07-.72h7.11c.48 0 .89.29 1.07.72.18.43.06.92-.32 1.2z"/>
+                        </svg>
+                        ACCEDER AL CANAL DE TELEGRAM
+                    </a>
+                </div>
+                <footer class="mt-16 py-12 px-4 sm:px-6 lg:px-8 bg-neutral-200 text-neutral-600 text-sm">
+                    <div class="container mx-auto text-center">
+                        <h4 class="text-xl font-bold text-neutral-800 mb-4">Aviso Legal y Uso Responsable</h4>
+                        <p>
+                            TipsData proporciona pronósticos deportivos basados en análisis de datos y algoritmos de IA con fines puramente informativos. Las apuestas deportivas conllevan un riesgo inherente de pérdida económica. No garantizamos resultados y no nos hacemos responsables de las pérdidas que puedan derivarse del uso de nuestra información. Es responsabilidad del usuario apostar de manera responsable y únicamente con fondos que pueda permitirse perder. Si crees que tienes un problema con el juego, busca ayuda profesional. Prohibido el acceso a menores de 18 años.
+                        </p>
+                        <p class="mt-4">&copy; 2025 TipsData. Todos los derechos reservados.</p>
+                    </div>
+                </footer>
+            </section>
+
+            <section id="big-data-section" class="content-section py-16 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+                <div class="container mx-auto">
+                    <h3 class="text-4xl font-extrabold text-neutral-800 text-left mb-12">
+                        📊 Big Data: Estadísticas Detalladas de Partidos
+                    </h3>
+                    <p class="text-center text-lg text-neutral-600 mb-8">
+                        Un vistazo profundo a los números que sustentan nuestras predicciones. Datos clave de los 10 partidos más relevantes del día.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="big-data-matches">
+                        </div>
+                </div>
+                <footer class="mt-16 py-12 px-4 sm:px-6 lg:px-8 bg-neutral-200 text-neutral-600 text-sm">
+                    <div class="container mx-auto text-center">
+                        <h4 class="text-xl font-bold text-neutral-800 mb-4">Aviso Legal y Uso Responsable</h4>
+                        <p>
+                            TipsData proporciona pronósticos deportivos basados en análisis de datos y algoritmos de IA con fines puramente informativos. Las apuestas deportivas conllevan un riesgo inherente de pérdida económica. No garantizamos resultados y no nos hacemos responsables de las pérdidas que puedan derivarse del uso de nuestra información. Es responsabilidad del usuario apostar de manera responsable y únicamente con fondos que pueda permitirse perder. Si crees que tienes un problema con el juego, busca ayuda profesional. Prohibido el acceso a menores de 18 años.
+                        </p>
+                        <p class="mt-4">&copy; 2025 TipsData. Todos los derechos reservados.</p>
+                    </div>
+                </footer>
+            </section>
+
+            <section id="ia-analysis-section" class="content-section py-16 px-4 sm:px-6 lg:px-8">
+                <div class="container mx-auto">
+                    <h3 class="text-4xl font-extrabold text-neutral-800 text-center mb-12">
+                        🧠 Análisis IA: Partidos Analizados por Inteligencia Artificial
+                    </h3>
+                    <p class="text-center text-lg text-neutral-600 mb-8">
+                        Nuestros algoritmos te revelan las tendencias ocultas y los factores decisivos para cada encuentro.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8" id="ai-analysis-matches">
+                        </div>
+                </div>
+                <footer class="mt-16 py-12 px-4 sm:px-6 lg:px-8 bg-neutral-200 text-neutral-600 text-sm">
+                    <div class="container mx-auto text-center">
+                        <h4 class="text-xl font-bold text-neutral-800 mb-4">Aviso Legal y Uso Responsable</h4>
+                        <p>
+                            TipsData proporciona pronósticos deportivos basados en análisis de datos y algoritmos de IA con fines puramente informativos. Las apuestas deportivas conllevan un riesgo inherente de pérdida económica. No garantizamos resultados y no nos hacemos responsables de las pérdidas que puedan derivarse del uso de nuestra información. Es responsabilidad del usuario apostar de manera responsable y únicamente con fondos que pueda permitirse perder. Si crees que tienes un problema con el juego, busca ayuda profesional. Prohibido el acceso a menores de 18 años.
+                        </p>
+                        <p class="mt-4">&copy; 2025 TipsData. Todos los derechos reservados.</p>
+                    </div>
+                </footer>
+            </section>
+
+            <section id="predicciones-section" class="content-section py-16 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+                <div class="container mx-auto">
+                    <h3 class="text-4xl font-extrabold text-neutral-800 text-center mb-12">
+                        🔮 Nuestras Predicciones del Día
+                    </h3>
+                    
+                    <div class="flex flex-wrap justify-center gap-4 mb-12">
+                        <button class="filter-button active" data-filter="favoritos">Favoritos para Ganar</button>
+                        <button class="filter-button" data-filter="over25">Más 2.5 Goles</button>
+                        <button class="filter-button" data-filter="corners">Más 8.5 Córners</button>
+                        <button class="filter-button" data-filter="btts">Ambos Marcan</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="prediction-cards">
+                        </div>
+                </div>
+                <footer class="mt-16 py-12 px-4 sm:px-6 lg:px-8 bg-neutral-200 text-neutral-600 text-sm">
+                    <div class="container mx-auto text-center">
+                        <h4 class="text-xl font-bold text-neutral-800 mb-4">Aviso Legal y Uso Responsable</h4>
+                        <p>
+                            TipsData proporciona pronósticos deportivos basados en análisis de datos y algoritmos de IA con fines puramente informativos. Las apuestas deportivas conllevan un riesgo inherente de pérdida económica. No garantizamos resultados y no nos hacemos responsables de las pérdidas que puedan derivarse del uso de nuestra información. Es responsabilidad del usuario apostar de manera responsable y únicamente con fondos que pueda permitirse perder. Si crees que tienes un problema con el juego, busca ayuda profesional. Prohibido el acceso a menores de 18 años.
+                        </p>
+                        <p class="mt-4">&copy; 2025 TipsData. Todos los derechos reservados.</p>
+                    </div>
+                </footer>
+            </section>
+            
+            <section id="como-funciona-section" class="content-section py-16 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+    <div class="container mx-auto max-w-4xl">
+        <h3 class="text-4xl font-extrabold text-neutral-800 text-center mb-12">
+            🤖 ¿CÓMO FUNCIONA TIPS DATA?
+        </h3>
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+                <p class="text-lg text-neutral-600 mb-6">
+                    Nuestra metodología es la clave de nuestro éxito. Combinamos la potencia de la inteligencia artificial con un análisis estadístico profundo y la validación de expertos humanos para ofrecerte solo los pronósticos más fiables.
+                </p>
+                <ul class="space-y-4 text-neutral-700 text-lg">
+                    <li class="flex items-start">
+                        <span class="text-sky-600 text-2xl mr-3 flex-shrink-0">✅</span>
+                        <div>
+                            <span class="font-bold block">Análisis combinados:</span>
+                            <span class="block">IA + estadísticas + revisión expertos.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-sky-600 text-2xl mr-3 flex-shrink-0">📈</span>
+                        <div>
+                            <span class="font-bold block">Big Data:</span>
+                            <span class="block">Más de 35.000 datos por partido procesados automáticamente.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-sky-600 text-2xl mr-3 flex-shrink-0">🔒</span>
+                        <div>
+                            <span class="font-bold block">Triple filtro:</span>
+                            <span class="block">Valor estadístico, validación por IA y revisión experta.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-sky-600 text-2xl mr-3 flex-shrink-0">💡</span>
+                        <div>
+                            <span class="font-bold block">Solo tips con valor:</span>
+                            <span class="block">Identificamos oportunidades donde la cuota es más alta que la probabilidad real.</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="flex justify-center items-center">
+                <div class="relative w-full max-w-sm aspect-square bg-white rounded-full shadow-lg flex flex-col items-center justify-center border-4 border-sky-200">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-sky-600 text-white rounded-full w-24 h-24 flex items-center justify-center text-center text-xs font-bold shadow-xl">
+                        PICK FINAL
+                    </div>
+                    <div class="absolute w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center text-center text-xs font-bold text-white shadow-md" style="top: 20%; left: 10%;">
+                        DATOS RAW
+                    </div>
+                    <div class="absolute w-24 h-24 bg-green-500 rounded-full flex items-center justify-center text-center text-xs font-bold text-white shadow-md" style="top: 20%; right: 10%;">
+                        ALGORITMO IA
+                    </div>
+                    <div class="absolute w-24 h-24 bg-yellow-500 rounded-full flex items-center justify-center text-center text-xs font-bold text-neutral-800 shadow-md" style="bottom: 10%; left: 25%;">
+                        ANÁLISIS EXPERTO
+                    </div>
+                    <div class="absolute w-24 h-24 bg-red-500 rounded-full flex items-center justify-center text-center text-xs font-bold text-white shadow-md" style="bottom: 10%; right: 25%;">
+                        FILTROS VALOR
+                    </div>
+                    <div class="absolute border-2 border-sky-400 border-dashed w-48 h-48 rounded-full animate-spin-slow"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="mt-16 py-12 px-4 sm:px-6 lg:px-8 bg-neutral-200 text-neutral-600 text-sm">
+        <div class="container mx-auto text-center">
+            <h4 class="text-xl font-bold text-neutral-800 mb-4">Aviso Legal y Uso Responsable</h4>
+            <p>
+                TipsData proporciona pronósticos deportivos basados en análisis de datos y algoritmos de IA con fines puramente informativos. Las apuestas deportivas conllevan un riesgo inherente de pérdida económica. No garantizamos resultados y no nos hacemos responsables de las pérdidas que puedan derivarse del uso de nuestra información. Es responsabilidad del usuario apostar de manera responsable y únicamente con fondos que pueda permitirse perder. Si crees que tienes un problema con el juego, busca ayuda profesional. Prohibido el acceso a menores de 18 años.
+            </p>
+            <p class="mt-4">&copy; 2025 TipsData. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</section>
+
+            <section id="ejemplos-ganadores-section" class="content-section py-16 px-4 sm:px-6 lg:px-8">
+                <div class="container mx-auto">
+                    <h3 class="text-4xl font-extrabold text-neutral-800 text-center mb-12">
+                        📊 Ejemplos de Tips Ganadores
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="p-6 bg-white rounded-lg shadow-md border-l-4 border-emerald-500">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="font-bold text-lg text-neutral-800">🏆 PSG vs Inter — Ambos marcan (1.85)</span>
+                                <span class="text-emerald-500 font-bold text-2xl">✅</span>
+                            </div>
+                            <p class="text-neutral-600 text-sm">
+                                <span class="font-bold">💬 Análisis breve:</span> "Ambos equipos en forma ofensiva. Final abierta. Mercado apoyando el BTTS..."
+                            </p>
+                            <p class="text-neutral-600 text-sm mt-2">
+                                <span class="font-bold">Resultado real:</span> 2-1 (Ambos Marcan: SÍ)
+                            </p>
+                        </div>
+                        <div class="p-6 bg-white rounded-lg shadow-md border-l-4 border-emerald-500">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="font-bold text-lg text-neutral-800">🏆 Real Madrid vs Man City — Over 2.5 goles (1.65)</span>
+                                <span class="text-emerald-500 font-bold text-2xl">✅</span>
+                            </div>
+                            <p class="text-neutral-600 text-sm">
+                                <span class="font-bold">💬 Análisis breve:</span> "Duelo de gigantes con ataques imparables y defensas ocasionalmente vulnerables..."
+                            </p>
+                            <p class="text-neutral-600 text-sm mt-2">
+                                <span class="font-bold">Resultado real:</span> 3-3 (Total Goles: 6)
+                            </p>
+                        </div>
+                        <div class="p-6 bg-white rounded-lg shadow-md border-l-4 border-emerald-500">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="font-bold text-lg text-neutral-800">🏆 Bayern Múnich vs Dortmund — Bayern gana (1.30)</span>
+                                <span class="text-emerald-500 font-bold text-2xl">✅</span>
+                            </div>
+                            <p class="text-neutral-600 text-sm">
+                                <span class="font-bold">💬 Análisis breve:</span> "Dominio histórico del Bayern en el Der Klassiker, cuota con valor a pesar de ser baja..."
+                            </p>
+                            <p class="text-neutral-600 text-sm mt-2">
+                                <span class="font-bold">Resultado real:</span> 4-2 (Bayern Gana: SÍ)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <footer class="mt-16 py-12 px-4 sm:px-6 lg:px-8 bg-neutral-200 text-neutral-600 text-sm">
+                    <div class="container mx-auto text-center">
+                        <h4 class="text-xl font-bold text-neutral-800 mb-4">Aviso Legal y Uso Responsable</h4>
+                        <p>
+                            TipsData proporciona pronósticos deportivos basados en análisis de datos y algoritmos de IA con fines puramente informativos. Las apuestas deportivas conllevan un riesgo inherente de pérdida económica. No garantizamos resultados y no nos hacemos responsables de las pérdidas que puedan derivarse del uso de nuestra información. Es responsabilidad del usuario apostar de manera responsable y únicamente con fondos que pueda permitirse perder. Si crees que tienes un problema con el juego, busca ayuda profesional. Prohibido el acceso a menores de 18 años.
+                        </p>
+                        <p class="mt-4">&copy; 2025 TipsData. Todos los derechos reservados.</p>
+                    </div>
+                </footer>
+            </section>
+
+            <section id="confianza-section" class="content-section py-16 px-4 sm:px-6 lg:px-8 bg-sky-50">
+                <div class="container mx-auto max-w-4xl">
+                    <h3 class="text-4xl font-extrabold text-neutral-800 text-center mb-12">
+                        👥 QUIÉNES SOMOS?
+                    </h3>
+                    
+                    <div class="bg-white rounded-lg shadow-md p-8 mb-8 border-t-4 border-sky-600">
+                        <h4 class="text-2xl font-bold text-sky-700 mb-4">¡Bienvenidos a TipsData: Tu Socio en el Éxito Deportivo!</h4>
+                        <p class="text-neutral-700 leading-relaxed mb-4">
+                            En TipsData, somos un grupo de <strong class="text-sky-800">apostadores deportivos con más de 12 años de experiencia</strong> en el sector. Desde hace más de 8 años, nos dedicamos a ser tus tipsters de confianza, analizando meticulosamente cada evento deportivo para encontrar la mejor apuesta del día.
+                        </p>
+                        <p class="text-neutral-700 leading-relaxed mb-4">
+                            Llevamos muchos años <strong class="text-emerald-600">generando beneficios consistentes</strong> en el mundo de las apuestas, y ahora queremos compartir ese conocimiento contigo. Nuestro objetivo es simple: que disfrutes de tu deporte favorito con una emoción renovada, sabiendo que tienes un equipo de profesionales trabajando para ayudarte a obtener un beneficio extra.
+                        </p>
+                        <p class="text-neutral-700 leading-relaxed mb-4">
+                            Nuestra comunidad en Telegram crece a diario, lo que es un reflejo directo de la cantidad de personas que ya están ganando dinero con nosotros. Contamos con un <strong class="text-sky-800">equipo grande y lleno de profesionales</strong>, apoyado por una red de informantes estratégicamente repartidos por todo el mundo. Esto nos permite tener acceso a la información más relevante de todas las ligas, garantizando que siempre compartimos las mejores apuestas de forma gratuita. ¡TipsData no solo te brinda las mejores apuestas del día, sino que también es una de las comunidades de apostadores más sólidas y exitosas del mundo!
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-md p-8 mb-8 border-t-4 border-emerald-600">
+                        <h4 class="text-2xl font-bold text-emerald-700 mb-4">🚀 Pasos Sencillos para Empezar a Ganar Dinero con TipsData</h4>
+                        <ol class="list-decimal list-inside text-neutral-700 space-y-3 pl-4">
+                            <li><strong class="text-sky-800">Únete a nuestro canal de Telegram</strong> y activa las notificaciones. Así, recibirás al instante nuestros picks más rentables.</li>
+                            <li><strong class="text-sky-800">Regístrate en una casa de apuestas fiable.</strong> Si aún no la tienes, te podemos recomendar las que utilizamos nosotros.</li>
+                            <li><strong class="text-sky-800">Ingresa tu bankroll inicial</strong>, el capital que destinarás a tus apuestas.</li>
+                            <li><strong class="text-sky-800">Sigue todas nuestras apuestas con disciplina.</strong> Confía en el análisis de nuestro equipo.</li>
+                            <li><strong class="text-sky-800">¡Disfruta del dinero ganado!</strong> Verás cómo tu bankroll crece siguiendo nuestros consejos.</li>
+                        </ol>
+                        <p class="text-neutral-700 mt-6 leading-relaxed">
+                            Con nuestro contenido gratuito, puedes empezar a ver beneficios, pero para <strong class="text-sky-800">maximizar tus ganancias y acceder a las apuestas más seguras del día</strong>, te invitamos a nuestro canal premium. Es ahí donde realmente sacarás pasta y asegurarás tu camino hacia la rentabilidad a largo plazo.
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-md p-8 border-t-4 border-yellow-600">
+                        <h4 class="text-2xl font-bold text-yellow-700 mb-4">💰 GESTIÓN DE LA BANCA: La Clave del Éxito Sostenible</h4>
+                        <p class="text-neutral-700 leading-relaxed mb-4">
+                            ¿Consigues gestionar tus gastos con respecto al sueldo que recibes? Cuidar nuestro <strong class="text-sky-800">patrimonio</strong> (en nuestro caso, el dinero ingresado en alguna casa de apuestas) es el deber básico de cada apostador. Podemos establecer una relación sencilla con la vida cotidiana y entender claramente la importancia de esta gestión para seguir en este mundo.
+                        </p>
+                        <p class="text-neutral-700 leading-relaxed mb-4">
+                            La mala gestión del dinero ingresado es, seguramente, uno de los grandes problemas del ciudadano, que hace que la mayoría de las personas acabe endeudada. En las apuestas deportivas, la premisa es la misma. <strong class="text-red-600">Gestionar mal el dinero que invertimos en las casas de apuestas nos acabará llevando por el mal camino</strong>.
+                        </p>
+                        <p class="text-neutral-700 leading-relaxed mb-4">
+                            A diferencia de muchos canales de Telegram que solo buscan quitarte el dinero con apuestas compulsivas y valores aleatorios sin análisis, en TipsData promovemos una <strong class="text-sky-800">gestión inteligente y disciplinada</strong>. La mayoría de los apostadores pierden y se quedan sin nada por motivos claros:
+                        </p>
+                        <ul class="list-disc list-inside text-neutral-700 space-y-2 pl-4 mb-4">
+                            <li>Falta de control de su banca</li>
+                            <li>Falta de análisis en sus entradas</li>
+                            <li>Falta de control emocional</li>
+                        </ul>
+                        <p class="text-neutral-700 leading-relaxed">
+                            Nosotros te enseñaremos a evitar estos errores, proporcionándote no solo los mejores picks, sino también las herramientas y la mentalidad para una <strong class="text-emerald-600">gestión de banca efectiva</strong> que te permita obtener beneficios de forma consistente y sostenible.
+                        </p>
+                    </div>
+<footer class="mt-4 py-12 px-4 sm:px-6 lg:px-8 bg-neutral-100 text-neutral-500 text-sm">
+                <div class="container mx-auto mb-12 max-w-4xl text-center">
+                    <h3 class="text-4xl font-extrabold text-neutral-800 mb-12">
+                        💎 ¿POR QUÉ CONFIAR EN TIPS DATA?
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                        <div class="p-6 bg-white rounded-lg shadow-md">
+                            <h4 class="text-2xl font-bold text-sky-700 mb-3">Transparencia Total</h4>
+                            <ul class="text-neutral-600 space-y-2">
+                                <li class="flex items-start"><span class="text-sky-600 mr-2">➡️</span>Sin suscripciones de pago</li>
+                                <li class="flex items-start"><span class="text-sky-600 mr-2">➡️</span>Resultados públicos</li>
+                                <li class="flex items-start"><span class="text-sky-600 mr-2">➡️</span>No vendemos humo. Solo valor real.</li>
+                            </ul>
+                        </div>
+                        <div class="p-6 bg-white rounded-lg shadow-md">
+                            <h4 class="text-2xl font-bold text-sky-700 mb-3">Resultados Comprobados</h4>
+                            <ul class="text-neutral-600 space-y-2">
+                                <li class="flex items-start"><span class="text-sky-600 mr-2">➡️</span>+85% aciertos en picks con 5 estrellas en últimos 3 meses.</li>
+                                <li class="flex items-start"><span class="text-sky-600 mr-2">➡️</span>Análisis profundo y riguroso.</li>
+                                <li class="flex items-start"><span class="text-sky-600 mr-2">➡️</span>Un modelo que aprende y mejora constantemente.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <footer class="mt-16 py-12 px-4 sm:px-6 lg:px-8 bg-neutral-200 text-neutral-600 text-sm">
+                    <div class="container mx-auto text-center">
+                        <h4 class="text-xl font-bold text-neutral-800 mb-4">Aviso Legal y Uso Responsable</h4>
+                        <p>
+                            TipsData proporciona pronósticos deportivos basados en análisis de datos y algoritmos de IA con fines puramente informativos. Las apuestas deportivas conllevan un riesgo inherente de pérdida económica. No garantizamos resultados y no nos hacemos responsables de las pérdidas que puedan derivarse del uso de nuestra información. Es responsabilidad del usuario apostar de manera responsable y únicamente con fondos que pueda permitirse perder. Si crees que tienes un problema con el juego, busca ayuda profesional. Prohibido el acceso a menores de 18 años.
+                        </p>
+                        <p class="mt-4">&copy; 2025 TipsData. Todos los derechos reservados.</p>
+                    </div>
+                </footer>
+            </section>
+
+            <section id="contacto-section" class="content-section py-16 px-4 sm:px-6 lg:px-8">
+                <div class="container mx-auto max-w-3xl text-center">
+                    <h3 class="text-4xl font-extrabold text-neutral-800 mb-8">
+                        📲 Conéctate con TipsData
+                    </h3>
+                    <p class="text-xl text-neutral-600 mb-10">
+                        Sigue nuestros canales para recibir las predicciones más fiables y contenido exclusivo.
+                    </p>
+                    <div class="flex justify-center space-x-6 md:space-x-10 mb-10">
+                        <a href="#" class="flex flex-col items-center text-sky-600 hover:text-sky-800 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-12 h-12">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.33 7.82l-5.63 4.22c-.22.17-.48.25-.75.25-.26 0-.53-.08-.75-.25L6.67 11c-.38-.28-.5-.77-.32-1.2.18-.43.59-.72 1.07-.72h7.11c.48 0 .89.29 1.07.72.18.43.06.92-.32 1.2z"/>
+                            </svg>
+                            <span class="mt-2 text-lg font-semibold">Telegram</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center text-sky-600 hover:text-sky-800 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-12 h-12">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.13l-6.233-8.91-.01-.01L1.886 2.25H8.09l5.429 7.57L18.244 2.25zm-.323 16.647h2.073L7.756 3.003H5.684l12.237 15.894z"/>
+                            </svg>
+                            <span class="mt-2 text-lg font-semibold">Twitter/X</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center text-sky-600 hover:text-sky-800 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-12 h-12">
+                                <path d="M12.001 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.275 16.927c-.896-.062-1.249-.125-2.025-.562-1.266-.719-2.063-1.688-2.671-2.906-.219-.45-.484-.969-.484-1.297 0-.328.219-.656.453-.984.344-.5.719-.875 1.031-1.125.328-.25.688-.422 1.031-.562.375-.156.719-.203.969-.203.188 0 .344.031.422.094.078.062.172.156.266.297.094.125.172.297.234.469.062.172.094.344.094.484 0 .14-.016.297-.047.469-.031.172-.078.359-.14.547-.078.219-.188.469-.328.703-.14.234-.313.5-.547.797-.234.297-.531.625-.922.969-.391.344-.828.672-1.297.969-.484.297-.984.531-1.469.703-.5.172-.984.25-1.422.25-.875 0-1.688-.25-2.422-.75-.734-.5-1.328-1.188-1.781-2.063-.453-.875-.688-1.89-.688-3.031 0-1.188.297-2.25.891-3.188.594-.938 1.453-1.641 2.563-2.109 1.125-.469 2.375-.703 3.75-.703 1.281 0 2.453.25 3.5.75 1.031.5 1.891 1.188 2.594 2.063.703.875 1.063 1.906 1.063 3.063 0 1.25-.266 2.406-.797 3.453-.531 1.047-1.281 1.938-2.25 2.672z"/>
+                            </svg>
+                            <span class="mt-2 text-lg font-semibold">TikTok</span>
+                        </a>
+                        <a href="#" class="flex flex-col items-center text-sky-600 hover:text-sky-800 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-12 h-12">
+                                <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-3.069 16.275v-8.55l7.98 4.275-7.98 4.275z"/>
+                            </svg>
+                            <span class="mt-2 text-lg font-semibold">YouTube</span>
+                        </a>
+                    </div>
+                </div>
+                <footer class="mt-16 py-12 px-4 sm:px-6 lg:px-8 bg-neutral-200 text-neutral-600 text-sm">
+                    <div class="container mx-auto text-center">
+                        <h4 class="text-xl font-bold text-neutral-800 mb-4">Aviso Legal y Uso Responsable</h4>
+                        <p>
+                            TipsData proporciona pronósticos deportivos basados en análisis de datos y algoritmos de IA con fines puramente informativos. Las apuestas deportivas conllevan un riesgo inherente de pérdida económica. No garantizamos resultados y no nos hacemos responsables de las pérdidas que puedan derivarse del uso de nuestra información. Es responsabilidad del usuario apostar de manera responsable y únicamente con fondos que pueda permitirse perder. Si crees que tienes un problema con el juego, busca ayuda profesional. Prohibido el acceso a menores de 18 años.
+                        </p>
+                        <p class="mt-4">&copy; 2025 TipsData. Todos los derechos reservados.</p>
+                    </div>
+                </footer>
+            </section>
+        </div>
+
+    </main>
+
+    <script>
+        // Datos de ejemplo para Big Data y Análisis IA (10 partidos)
+        const bigDataMatches = [
+            {
+                id: 'bd-match-1',
+                homeTeam: 'Atlético Estrellas', awayTeam: 'Dinamo FC', league: 'Liga Nacional', date: '31 Mayo',
+                homeStats: { form: 'WWDLW', goalsScored: 2.1, goalsConceded: 0.8, cleanSheets: 6, avgCorners: 5.8 },
+                awayStats: { form: 'LDDWL', goalsScored: 1.2, goalsConceded: 1.9, cleanSheets: 2, avgCorners: 4.5 },
+                h2h: { homeWins: 3, draws: 2, awayWins: 1, last5: ['H 2-0 A', 'A 1-1 H', 'H 3-1 A', 'A 0-2 H', 'H 1-0 A'] },
+                aiAnalysis: "Atlético Estrellas en casa es una fortaleza (78% prob. de ganar) por su defensa y la forma del oponente. Prevemos -3.5 goles. Alto promedio de córners para el local."
+            },
+            {
+                id: 'bd-match-2',
+                homeTeam: 'Real Cosmos', awayTeam: 'FC Gladiadores', league: 'Primera División', date: '31 Mayo',
+                homeStats: { form: 'DDWWW', goalsScored: 1.9, goalsConceded: 1.0, cleanSheets: 4, avgCorners: 6.2 },
+                awayStats: { form: 'LLDDW', goalsScored: 0.9, goalsConceded: 2.1, cleanSheets: 1, avgCorners: 3.9 },
+                h2h: { homeWins: 4, draws: 1, awayWins: 0, last5: ['H 3-0 A', 'A 2-2 H', 'H 1-0 A', 'A 0-1 H', 'H 2-0 A'] },
+                aiAnalysis: "Real Cosmos muestra una racha dominante en casa (85% prob. de victoria), impulsado por su efectividad ofensiva. Los visitantes luchan con la portería a cero y defensas. Posible Over 2.5."
+            },
+            {
+                id: 'bd-match-3',
+                homeTeam: 'Unión Verde', awayTeam: 'Club Marrón', league: 'Serie A', date: '31 Mayo',
+                homeStats: { form: 'WLWWL', goalsScored: 1.5, goalsConceded: 1.2, cleanSheets: 3, avgCorners: 5.0 },
+                awayStats: { form: 'WLWLW', goalsScored: 1.6, goalsConceded: 1.3, cleanSheets: 2, avgCorners: 4.8 },
+                h2h: { homeWins: 2, draws: 3, awayWins: 1, last5: ['H 1-1 A', 'A 2-1 H', 'H 0-0 A', 'A 1-2 H', 'H 1-1 A'] },
+                aiAnalysis: "Partido muy parejo según IA (Empate 35% prob.). Ambos equipos tienen tendencias ofensivas similares. Alta probabilidad de Ambos Marcan y más de 8.5 córners."
+            },
+            {
+                id: 'bd-match-4',
+                homeTeam: 'Deportivo Naranja', awayTeam: 'Rayo Azul', league: 'Bundesliga', date: '31 Mayo',
+                homeStats: { form: 'WWWWL', goalsScored: 2.5, goalsConceded: 0.7, cleanSheets: 7, avgCorners: 6.5 },
+                awayStats: { form: 'LLLLD', goalsScored: 0.7, goalsConceded: 2.8, cleanSheets: 0, avgCorners: 3.2 },
+                h2h: { homeWins: 5, draws: 0, awayWins: 0, last5: ['H 4-0 A', 'A 0-3 H', 'H 2-0 A', 'A 1-4 H', 'H 5-1 A'] },
+                aiAnalysis: "Deportivo Naranja es un claro favorito (90% prob. victoria). Rayo Azul en crisis. Se espera una goleada y más de 3.5 goles para el local. El Hándicap -1.5 es atractivo."
+            },
+            {
+                id: 'bd-match-5',
+                homeTeam: 'Fénix Dorado', awayTeam: 'Titán Negro', league: 'Ligue 1', date: '31 Mayo',
+                homeStats: { form: 'DLDWW', goalsScored: 1.4, goalsConceded: 1.1, cleanSheets: 3, avgCorners: 4.7 },
+                awayStats: { form: 'WWDLW', goalsScored: 1.8, goalsConceded: 0.9, cleanSheets: 5, avgCorners: 5.5 },
+                h2h: { homeWins: 1, draws: 2, awayWins: 3, last5: ['H 1-2 A', 'A 1-1 H', 'H 0-1 A', 'A 2-0 H', 'H 2-2 A'] },
+                aiAnalysis: "Partido con tendencia a la visita (Titán Negro 55% prob. de ganar). Fénix Dorado lucha en casa. Pocos goles esperados, Under 2.5 podría ser un pick de valor."
+            },
+            {
+                id: 'bd-match-6',
+                homeTeam: 'Pumas Rojos', awayTeam: 'Jaguares Azules', league: 'MLS', date: '31 Mayo',
+                homeStats: { form: 'WLDLD', goalsScored: 1.3, goalsConceded: 1.5, cleanSheets: 2, avgCorners: 4.9 },
+                awayStats: { form: 'WWDLL', goalsScored: 1.7, goalsConceded: 1.4, cleanSheets: 3, avgCorners: 5.3 },
+                h2h: { homeWins: 2, draws: 1, awayWins: 2, last5: ['H 1-0 A', 'A 2-2 H', 'H 1-2 A', 'A 3-1 H', 'H 0-1 A'] },
+                aiAnalysis: "Un clásico divisional. IA prevé un partido abierto (Ambos Marcan 68% prob.). Las defensas no son su fuerte y los ataques son inconsistentes pero capaces. Más de 9.5 córners."
+            },
+            {
+                id: 'bd-match-7',
+                homeTeam: 'Leones Verdes', awayTeam: 'Águilas Amarillas', league: 'Liga MX', date: '31 Mayo',
+                homeStats: { form: 'WWWWL', goalsScored: 2.3, goalsConceded: 0.6, cleanSheets: 7, avgCorners: 6.0 },
+                awayStats: { form: 'LLLLD', goalsScored: 0.8, goalsConceded: 2.5, cleanSheets: 1, avgCorners: 3.5 },
+                h2h: { homeWins: 5, draws: 0, awayWins: 0, last5: ['H 3-0 A', 'A 1-2 H', 'H 4-1 A', 'A 0-2 H', 'H 2-0 A'] },
+                aiAnalysis: "Leones Verdes es la máquina de ganar en casa (88% prob. de victoria). Águilas Amarillas está en caída libre. Se espera un partido con muchos goles del local y quizás un hándicap -1.5 para Leones."
+            },
+            {
+                id: 'bd-match-8',
+                homeTeam: 'Dragones Azules', awayTeam: 'Grifos Rojos', league: 'Liga Portuguesa', date: '31 Mayo',
+                homeStats: { form: 'DLDWW', goalsScored: 1.6, goalsConceded: 1.0, cleanSheets: 4, avgCorners: 5.2 },
+                awayStats: { form: 'WDDLW', goalsScored: 1.5, goalsConceded: 1.2, cleanSheets: 3, avgCorners: 4.8 },
+                h2h: { homeWins: 2, draws: 3, awayWins: 1, last5: ['H 1-1 A', 'A 2-2 H', 'H 0-0 A', 'A 1-0 H', 'H 2-1 A'] },
+                aiAnalysis: "Un empate es el resultado más probable según la IA (40% prob.). Ambos equipos tienen un rendimiento similar y un historial de empates en H2H. Under 2.5 y BTTS NO son opciones a considerar."
+            },
+            {
+                id: 'bd-match-9',
+                homeTeam: 'Lobos Blancos', awayTeam: 'Ciervos Negros', league: 'Eredivisie', date: '31 Mayo',
+                homeStats: { form: 'LWWLL', goalsScored: 1.1, goalsConceded: 1.8, cleanSheets: 1, avgCorners: 4.0 },
+                awayStats: { form: 'WWWWD', goalsScored: 2.2, goalsConceded: 0.7, cleanSheets: 6, avgCorners: 6.3 },
+                h2h: { homeWins: 1, draws: 1, awayWins: 3, last5: ['H 0-2 A', 'A 1-3 H', 'H 1-1 A', 'A 0-1 H', 'H 2-0 A'] },
+                aiAnalysis: "Ciervos Negros es el claro favorito fuera de casa (65% prob. de victoria). Lobos Blancos está en muy mala forma. IA prevé un partido con más de 2.5 goles, mayoritariamente de los visitantes."
+            },
+            {
+                id: 'bd-match-10',
+                homeTeam: 'Ángeles Verdes', awayTeam: 'Demonios Rojos', league: 'J-League', date: '31 Mayo',
+                homeStats: { form: 'WDLDW', goalsScored: 1.7, goalsConceded: 1.1, cleanSheets: 3, avgCorners: 5.5 },
+                awayStats: { form: 'DLWWL', goalsScored: 1.4, goalsConceded: 1.5, cleanSheets: 2, avgCorners: 4.0 },
+                h2h: { homeWins: 2, draws: 2, awayWins: 1, last5: ['H 2-1 A', 'A 0-0 H', 'H 1-1 A', 'A 3-2 H', 'H 1-0 A'] },
+                aiAnalysis: "Partido que la IA ve como un potencial empate (45% prob.) o una victoria ajustada del local. Ambos equipos marcan con frecuencia. Los córners podrían ser un mercado interesante por su estilo de juego."
+            }
+        ];
+
+        // Datos de ejemplo para las 4 secciones de Predicciones (10 partidos por sección)
+        const predictionPicks = {
+            favoritos: [
+                { home: 'FC Barcelona', away: 'Deportivo Alavés', odds: '1.25' },
+                { home: 'Manchester United', away: 'Crystal Palace', odds: '1.40' },
+                { home: 'Borussia Dortmund', away: 'Mainz 05', odds: '1.30' },
+                { home: 'Inter de Milán', away: 'Genoa', odds: '1.33' },
+                { home: 'Ajax', away: 'FC Utrecht', odds: '1.20' },
+                { home: 'Porto', away: 'Boavista', odds: '1.28' },
+                { home: 'Benfica', away: 'Estoril', odds: '1.22' },
+                { home: 'Atlético Mineiro', away: 'Cuiabá', odds: '1.45' },
+                { home: 'River Plate', away: 'Talleres', odds: '1.38' },
+                { home: 'LA Galaxy', away: 'San Jose Earthquakes', odds: '1.60' }
+            ],
+            over25: [
+                { home: 'Bayern Múnich', away: 'Werder Bremen', odds: '1.55' },
+                { home: 'Napoli', away: 'Fiorentina', odds: '1.70' },
+                { home: 'Arsenal', away: 'Leicester City', odds: '1.65' },
+                { home: 'PSV Eindhoven', away: 'Vitesse', odds: '1.50' },
+                { home: 'Real Betis', away: 'Rayo Vallecano', odds: '1.80' },
+                { home: 'Hoffenheim', away: 'Freiburg', odds: '1.68' },
+                { home: 'Marsella', away: 'Montpellier', odds: '1.72' },
+                { home: 'Grêmio', away: 'Fortaleza', odds: '1.85' },
+                { home: 'Fluminense', away: 'Coritiba', odds: '1.78' },
+                { home: 'Seattle Sounders', away: 'Portland Timbers', odds: '1.62' }
+            ],
+            corners: [
+                { home: 'Tottenham', away: 'Everton', odds: '1.70' },
+                { home: 'West Ham', away: 'Wolves', odds: '1.85' },
+                { home: 'Sevilla', away: 'Celta Vigo', odds: '1.78' },
+                { home: 'Monaco', away: 'Reims', odds: '1.90' },
+                { home: 'Villarreal', away: 'Athletic Bilbao', odds: '1.82' },
+                { home: 'Leipzig', away: 'Union Berlin', odds: '1.77' },
+                { home: 'Sporting CP', away: 'Braga', odds: '1.92' },
+                { home: 'Santos', away: 'Botafogo', odds: '1.88' },
+                { home: 'Charlotte FC', away: 'Atlanta United', odds: '1.75' },
+                { home: 'Dynamo Kyiv', away: 'Shakhtar Donetsk', odds: '1.95' }
+            ],
+            btts: [
+                { home: 'Aston Villa', away: 'Brighton', odds: '1.80' },
+                { home: 'Fenerbahçe', away: 'Galatasaray', odds: '1.75' },
+                { home: 'Valencia', away: 'Getafe', odds: '1.95' },
+                { home: 'Lille', away: 'Rennes', odds: '1.85' },
+                { home: 'Eintracht Frankfurt', away: 'Augsburg', odds: '1.90' },
+                { home: 'Boca Juniors', away: 'Racing Club', odds: '1.83' },
+                { home: 'Atlético Nacional', away: 'Millonarios', odds: '1.98' },
+                { home: 'Vasco da Gama', away: 'Bahia', odds: '1.87' },
+                { home: 'New York City FC', away: 'Philadelphia Union', odds: '1.82' },
+                { home: 'Al Ahly', away: 'Zamalek', odds: '1.77' }
+            ]
+        };
+
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        // NOUVEAU: Selector para los botones de la SEGUNDA BARRA
+        const secondaryNavButtons = document.querySelectorAll('.secondary-nav-item');
+        // Main navigation links (mobile)
+        const mobileNavLinkButtons = document.querySelectorAll('.nav-link-btn-mobile');
+        // All content sections
+        const contentSections = document.querySelectorAll('.content-section');
+        // "Ver Predicciones del Día" button on Hero section
+        const heroMainActionButton = document.querySelector('.main-action-btn');
+        // Logo link (to scroll to hero)
+        const logoLink = document.querySelector('.main-nav-link');
+
+        const filterButtons = document.querySelectorAll('.filter-button');
+        const predictionCardsContainer = document.getElementById('prediction-cards');
+        const bigDataMatchesContainer = document.getElementById('big-data-matches');
+        const aiAnalysisMatchesContainer = document.getElementById('ai-analysis-matches');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Function to show a specific content section and hide others
+        function showSection(targetId) {
+            contentSections.forEach(section => {
+                section.classList.remove('active');
+            });
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+                // Scroll to the top of the displayed section if it's not the hero
+                if (targetId !== 'hero') {
+                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        }
+
+        // NOUVEAU: Handle clicks on SECONDARY navigation buttons (desktop)
+        secondaryNavButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.dataset.target;
+                showSection(targetId);
+                // Update active state for secondary buttons
+                secondaryNavButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+            });
+        });
+
+        // Handle clicks on main navigation links (mobile)
+        mobileNavLinkButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.dataset.target;
+                showSection(targetId);
+                // Update active state for buttons
+                mobileNavLinkButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                // Close mobile menu after click
+                mobileMenu.classList.add('hidden');
+            });
+        });
+
+        // Handle click on Hero section's main action button
+        if (heroMainActionButton) {
+            heroMainActionButton.addEventListener('click', () => {
+                const targetId = heroMainActionButton.dataset.target;
+                showSection(targetId);
+                // Also update the active state in the secondary navigation bar
+                secondaryNavButtons.forEach(btn => {
+                    if (btn.dataset.target === targetId) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                // Ensure mobile menu is closed if open
+                if (!mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+        }
+
+        // Handle click on Logo to return to Hero
+        if (logoLink) {
+            logoLink.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent default hash navigation
+                // Hide all content sections except hero
+                contentSections.forEach(section => {
+                    section.classList.remove('active');
+                });
+                // Ensure hero is active and visible
+                const heroSection = document.getElementById('hero');
+                if (heroSection) {
+                    heroSection.scrollIntoView({ behavior: 'smooth' });
+                }
+                // Deactivate all secondary nav buttons
+                secondaryNavButtons.forEach(btn => btn.classList.remove('active'));
+                // Close mobile menu if open
+                if (!mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+        }
+
+        // Function to render prediction cards (Favoritos, Over/Under, Corners, BTTS)
+        function renderPredictionCards(filter) {
+            predictionCardsContainer.innerHTML = ''; // Clear previous cards
+            const picksToShow = predictionPicks[filter] || [];
+
+            picksToShow.forEach(pick => {
+                const card = `
+                    <div class="pick-card p-6">
+                        <div class="flex items-center text-neutral-700 mb-3">
+                            <span class="text-2xl mr-2">⚽</span>
+                            <h4 class="text-xl font-bold">${pick.home} vs ${pick.away}</h4>
+                        </div>
+                        <p class="text-neutral-600 text-lg mb-4">
+                            ${pick.prediction ? `${pick.prediction} ` : ''} <span class="font-bold text-sky-700">Cuota: ${pick.odds}</span>
+                        </p>
+                        ${pick.confidence ? `<div class="flex items-center"><span class="font-bold text-neutral-700 mr-2">Confianza:</span><span class="star-filled text-xl">${'⭐'.repeat(pick.confidence)}</span></div>` : ''}
+                        ${pick.analysis ? `<p class="text-neutral-500 text-sm mt-3">🧠 Análisis: ${pick.analysis}</p>` : ''}
+                    </div>
+                `;
+                predictionCardsContainer.innerHTML += card;
+            });
+        }
+
+        // Function to render Big Data matches
+        function renderBigDataMatches() {
+            bigDataMatchesContainer.innerHTML = '';
+            bigDataMatches.forEach(match => {
+                const card = `
+                    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-sky-600">
+                        <h4 class="text-xl font-bold text-neutral-800 mb-3">${match.homeTeam} vs ${match.awayTeam} - ${match.league}</h4>
+                        <p class="text-neutral-600 text-sm mb-4">Fecha: ${match.date}</p>
+                        
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <h5 class="font-semibold text-neutral-700 mb-2">${match.homeTeam} (Local)</h5>
+                                <p>Forma: <span class="font-bold">${match.homeStats.form}</span></p>
+                                <p>Goles A. por partido: ${match.homeStats.goalsScored}</p>
+                                <p>Goles E. por partido: ${match.homeStats.goalsConceded}</p>
+                                <p>Porterías a 0: ${match.homeStats.cleanSheets}</p>
+                                <p>Córners A. por partido: ${match.homeStats.avgCorners}</p>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-neutral-700 mb-2">${match.awayTeam} (Visitante)</h5>
+                                <p>Forma: <span class="font-bold">${match.awayStats.form}</span></p>
+                                <p>Goles A. por partido: ${match.awayStats.goalsScored}</p>
+                                <p>Goles E. por partido: ${match.awayStats.goalsConceded}</p>
+                                <p>Porterías a 0: ${match.awayStats.cleanSheets}</p>
+                                <p>Córners A. por partido: ${match.awayStats.avgCorners}</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-sm">
+                            <h5 class="font-semibold text-neutral-700 mb-2">Historial H2H (${match.homeTeam} vs ${match.awayTeam})</h5>
+                            <p>Victorias Local: ${match.h2h.homeWins}, Empates: ${match.h2h.draws}, Victorias Visitante: ${match.h2h.awayWins}</p>
+                            <p>Últimos 5: ${match.h2h.last5.join(', ')}</p>
+                        </div>
+                    </div>
+                `;
+                bigDataMatchesContainer.innerHTML += card;
+            });
+        }
+
+        // Function to render AI Analysis matches
+        function renderAIAnalysisMatches() {
+            aiAnalysisMatchesContainer.innerHTML = '';
+            bigDataMatches.forEach(match => { // Use same 10 matches as Big Data
+                const card = `
+                    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-emerald-600">
+                        <h4 class="text-xl font-bold text-neutral-800 mb-3">${match.homeTeam} vs ${match.awayTeam} - ${match.league}</h4>
+                        <p class="text-neutral-600 text-sm">
+                            ${match.aiAnalysis}
+                        </p>
+                    </div>
+                `;
+                aiAnalysisMatchesContainer.innerHTML += card;
+            });
+        }
+
+
+        // Event listeners for filter buttons within Predicciones section
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const filter = button.dataset.filter;
+
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                renderPredictionCards(filter); // Render cards based on the active filter
+            });
+        });
+
+        // Initial rendering and section display when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Render Big Data and AI Analysis sections on load (they'll be hidden if not active)
+            renderBigDataMatches();
+            renderAIAnalysisMatches();
+
+            // Default to showing the "Pick Premium" section and activate its button
+            const defaultSectionId = 'premium-section';
+            showSection(defaultSectionId);
+            // NOUVEAU: Ahora activamos el botón de la SEGUNDA BARRA
+            const defaultButton = document.querySelector(`.secondary-nav-item[data-target="${defaultSectionId}"]`);
+            if (defaultButton) {
+                defaultButton.classList.add('active');
+            }
+
+            // Also ensure the first filter button in 'Predicciones' is active
+            const initialFilterButton = document.querySelector('.filter-button');
+            if (initialFilterButton) {
+                initialFilterButton.click(); // This also calls renderPredictionCards for 'favoritos'
+            }
+
+            // Handle potential direct link to a section via URL hash
+            const hash = window.location.hash.substring(1);
+            if (hash && document.getElementById(hash + '-section')) {
+                showSection(hash + '-section');
+                // NOUVEAU: Ahora activamos el botón de la SEGUNDA BARRA para el hash
+                const hashedButton = document.querySelector(`.secondary-nav-item[data-target="${hash}-section"]`);
+                if (hashedButton) {
+                    secondaryNavButtons.forEach(btn => btn.classList.remove('active'));
+                    hashedButton.classList.add('active');
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
